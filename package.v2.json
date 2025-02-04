@@ -1,15 +1,14 @@
 {
     "ChatGPT": {
-        "name": "ChatGPT",
-        "description": "消息交互支持与ChatGPT对话。",
+        "name": "SiliconFlow",
+        "description": "消息交互支持与硅基流动API对话。",
         "labels": "消息通知,识别",
-        "version": "2.0.1",
-        "icon": "Chatgpt_A.png",
-        "author": "jxxghp",
+        "version": "0.0.1",
+        "icon": "siliconcloud.png",
+        "author": "shom",
         "level": 1,
         "history": {
-            "v2.0.1": "修复辅助识别",
-            "v2.0": "适配MoviePilot V2 版本，采用链式事件机制"
+            "v0.0.1": "初始版本"
         }
     }
 }
