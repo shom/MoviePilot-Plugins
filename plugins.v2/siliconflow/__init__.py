@@ -223,10 +223,9 @@ class SiliconFlow(_PluginBase):
             "frequency_penalty": 0.5,
             "n": 1,
             "response_format": {"type": "text"},
-            "tools": []
         }
         headers = {
-            "Authorization": f"Bearer {self._siliconflow_token}",
+            "Authorization": "Bearer {self._siliconflow_token}",
             "Content-Type": "application/json"
         }
         try:
@@ -248,13 +247,12 @@ class SiliconFlow(_PluginBase):
             "messages": [{"role": "user", "content": f"请从文件名 '{filename}' 中提取媒体信息。"}],
             "stream": False,
             "max_tokens": 512,
-            "temperature": 0.7,
+            "temperature": 0.6,
             "top_p": 0.7,
             "top_k": 50,
-            "frequency_penalty": 0.5,
+            "frequency_penalty": 0.0,
             "n": 1,
             "response_format": {"type": "json"},
-            "tools": []
         }
         headers = {
             "Authorization": f"Bearer {self._siliconflow_token}",
