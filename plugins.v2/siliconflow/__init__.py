@@ -15,11 +15,11 @@ class SiliconFlow(_PluginBase):
     # 插件图标
     plugin_icon = "SiliconFlow_A.png"
     # 插件版本
-    plugin_version = "1.0.0"
+    plugin_version = "0.0.1"
     # 插件作者
-    plugin_author = "jxxghp"
+    plugin_author = "shom"
     # 作者主页
-    author_url = "https://github.com/jxxghp"
+    author_url = "https://github.com/shom"
     # 插件配置项ID前缀
     plugin_config_prefix = "siliconflow_"
     # 加载顺序
@@ -33,7 +33,7 @@ class SiliconFlow(_PluginBase):
     _recognize = False
     _siliconflow_url = "https://api.siliconflow.cn/v1/chat/completions"
     _siliconflow_token = None
-    _model = "deepseek-r1"
+    _model = "deepseek-ai/DeepSeek-R1"
 
     def init_plugin(self, config: dict = None):
         if config:
@@ -145,7 +145,7 @@ class SiliconFlow(_PluginBase):
                                         'props': {
                                             'model': 'model',
                                             'label': '默认模型',
-                                            'placeholder': 'deepseek-r1',
+                                            'placeholder': 'deepseek-ai/DeepSeek-R1',
                                         }
                                     }
                                 ]
@@ -159,7 +159,7 @@ class SiliconFlow(_PluginBase):
             "proxy": False,
             "recognize": False,
             "siliconflow_token": "",
-            "model": "deepseek-r1"
+            "model": "deepseek-ai/DeepSeek-R1"
         }
 
     def get_page(self) -> List[dict]:
