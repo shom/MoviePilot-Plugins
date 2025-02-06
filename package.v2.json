@@ -3,11 +3,12 @@
         "name": "SiliconFlow",
         "description": "消息交互支持与硅基流动API对话。",
         "labels": "消息通知,识别",
-        "version": "0.0.1",
+        "version": "0.0.2",
         "icon": "siliconcloud.png",
         "author": "shom",
         "level": 2,
         "history": {
+	    "v0.0.2": "bug修复",
             "v0.0.1": "初始版本"
         }
     }
