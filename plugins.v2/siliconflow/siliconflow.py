@@ -6,7 +6,7 @@ from typing import List, Union
 class SiliconFlow:
     _api_token: str = None
     _api_url: str = "https://api.siliconflow.cn/v1/chat/completions"
-    _model: str = "deepseek-r1"
+    _model: str = "deepseek-ai/DeepSeek-R1"
 
     def __init__(self, api_token: str, model: str = "deepseek-ai/DeepSeek-R1"):
         self._api_token = api_token
