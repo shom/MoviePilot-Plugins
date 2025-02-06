@@ -1,52 +1,48 @@
 from typing import Any, List, Dict, Tuple
-
 from app.core.config import settings
 from app.core.event import eventmanager, Event
 from app.log import logger
 from app.plugins import _PluginBase
-from app.plugins.siliconflow import deepseek
-from app.schemas.types import EventType, ChainEventType
+import requests
+import json
 
 
-class ChatGPT(_PluginBase):
+class SiliconFlow(_PluginBase):
     # 插件名称
-    plugin_name = "Siliconflow"
+    plugin_name = "SiliconFlow"
     # 插件描述
-    plugin_desc = "消息交互支持与硅基流动模型对话。"
+    plugin_desc = "消息交互支持与硅基流动对话。"
     # 插件图标
-    plugin_icon = "siliconcloud.png"
+    plugin_icon = "SiliconFlow_A.png"
     # 插件版本
-    plugin_version = "0.0.1"
+    plugin_version = "1.0.0"
     # 插件作者
-    plugin_author = "shom"
+    plugin_author = "jxxghp"
     # 作者主页
-    author_url = "https://github.com/shom"
+    author_url = "https://github.com/jxxghp"
     # 插件配置项ID前缀
-    plugin_config_prefix = "sili_"
+    plugin_config_prefix = "siliconflow_"
     # 加载顺序
     plugin_order = 15
     # 可使用的用户级别
     auth_level = 1
 
     # 私有属性
-    siliconflow = None
     _enabled = False
     _proxy = False
     _recognize = False
-    _siliconflow_url = None
-    _siliconflow_key = None
-    _model = None
+    _siliconflow_url = "https://api.siliconflow.cn/v1/chat/completions"
+    _siliconflow_token = None
+    _model = "deepseek-r1"
 
     def init_plugin(self, config: dict = None):
         if config:
-            # ... 其他配置读取不变 ...
-            if self._openai_url and self._openai_key:
-                self.openai = DeepSeekAI(
-                    api_key=self._openai_key, 
-                    api_url=self._openai_url,
-                    proxy=settings.PROXY if self._proxy else None,
-                    model=self._model
-                )
+            self._enabled = config.get("enabled")
+            self._proxy = config.get("proxy")
+            self._recognize = config.get("recognize")
+            self._siliconflow_token = config.get("siliconflow_token")
+            self._model = config.get("model", self._model)
+
     def get_state(self) -> bool:
         return self._enabled
 
@@ -131,25 +127,8 @@ class ChatGPT(_PluginBase):
                                     {
                                         'component': 'VTextField',
                                         'props': {
-                                            'model': 'siliconflow_url',
-                                            'label': '硅基流动API',
-                                            'placeholder': 'https://api.siliconflow.com',
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VCol',
-                                'props': {
-                                    'cols': 12,
-                                    'md': 4
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VTextField',
-                                        'props': {
-                                            'model': 'siliconflow_key',
-                                            'label': 'sk-xxx'
+                                            'model': 'siliconflow_token',
+                                            'label': '硅基流动 API Token',
                                         }
                                     }
                                 ]
@@ -165,30 +144,8 @@ class ChatGPT(_PluginBase):
                                         'component': 'VTextField',
                                         'props': {
                                             'model': 'model',
-                                            'label': '自定义模型',
-                                            'placeholder': 'deepseek-R1',
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        'component': 'VRow',
-                        'content': [
-                            {
-                                'component': 'VCol',
-                                'props': {
-                                    'cols': 12,
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VAlert',
-                                        'props': {
-                                            'type': 'info',
-                                            'variant': 'tonal',
-                                            'text': '开启插件后，消息交互时使用请[问帮你]开头，或者以？号结尾，或者超过10个汉字/单词，则会触发ChatGPT回复。'
-                                                    '开启辅助识别后，内置识别功能无法正常识别种子/文件名称时，将使用ChatGTP进行AI辅助识别，可以提升动漫等非规范命名的识别成功率。'
+                                            'label': '默认模型',
+                                            'placeholder': 'deepseek-r1',
                                         }
                                     }
                                 ]
@@ -201,9 +158,8 @@ class ChatGPT(_PluginBase):
             "enabled": False,
             "proxy": False,
             "recognize": False,
-            "siliconflow_url": "https://api.siliconflow.cn/v1/chat/completions",
-            "siliconflow_key": "",
-            "model": "deepseek-ai/DeepSeek-R1"
+            "siliconflow_token": "",
+            "model": "deepseek-r1"
         }
 
     def get_page(self) -> List[dict]:
@@ -212,28 +168,24 @@ class ChatGPT(_PluginBase):
     @eventmanager.register(EventType.UserMessage)
     def talk(self, event: Event):
         """
-        监听用户消息，获取ChatGPT回复
+        监听用户消息，获取硅基流动回复
         """
-        if not self._enabled:
-            return
-        if not self.siliconflow:
+        if not self._enabled or not self._siliconflow_token:
             return
         text = event.event_data.get("text")
         userid = event.event_data.get("userid")
         channel = event.event_data.get("channel")
         if not text:
             return
-        response = self.siliconflow.get_response(text=text, userid=userid)
+        response = self.get_siliconflow_response(text, userid)
         if response:
             self.post_message(channel=channel, title=response, userid=userid)
 
     @eventmanager.register(ChainEventType.NameRecognize)
     def recognize(self, event: Event):
         """
-        监听识别事件，使用ChatGPT辅助识别名称
+        监听识别事件，使用硅基流动辅助识别名称
         """
-        if not self.siliconflow:
-            return
         if not self._recognize:
             return
         if not event.event_data:
@@ -241,9 +193,9 @@ class ChatGPT(_PluginBase):
         title = event.event_data.get("title")
         if not title:
             return
-        # 调用ChatGPT
-        response = self.siliconflow.get_media_name(filename=title)
-        logger.info(f"ChatGPT返回结果：{response}")
+        # 调用硅基流动API进行识别
+        response = self.get_siliconflow_media_name(title)
+        logger.info(f"硅基流动返回结果：{response}")
         if response:
             event.event_data = {
                 'title': title,
@@ -255,8 +207,72 @@ class ChatGPT(_PluginBase):
         else:
             event.event_data = {}
 
+    def get_siliconflow_response(self, text: str, userid: str) -> str:
+        """
+        使用硅基流动API获取聊天回复
+        """
+        payload = {
+            "model": self._model,
+            "messages": [{"role": "user", "content": text}],
+            "stream": False,
+            "max_tokens": 512,
+            "temperature": 0.7,
+            "top_p": 0.7,
+            "top_k": 50,
+            "frequency_penalty": 0.5,
+            "n": 1,
+            "response_format": {"type": "text"},
+            "tools": []
+        }
+        headers = {
+            "Authorization": f"Bearer {self._siliconflow_token}",
+            "Content-Type": "application/json"
+        }
+        try:
+            response = requests.post(self._siliconflow_url, json=payload, headers=headers)
+            if response.status_code == 200:
+                result = response.json()
+                return result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            else:
+                return f"请求错误: {response.text}"
+        except Exception as e:
+            return f"发生错误: {str(e)}"
+
+    def get_siliconflow_media_name(self, filename: str) -> dict:
+        """
+        使用硅基流动辅助识别文件名中的媒体信息
+        """
+        payload = {
+            "model": self._model,
+            "messages": [{"role": "user", "content": f"请从文件名 '{filename}' 中提取媒体信息。"}],
+            "stream": False,
+            "max_tokens": 512,
+            "temperature": 0.7,
+            "top_p": 0.7,
+            "top_k": 50,
+            "frequency_penalty": 0.5,
+            "n": 1,
+            "response_format": {"type": "json"},
+            "tools": []
+        }
+        headers = {
+            "Authorization": f"Bearer {self._siliconflow_token}",
+            "Content-Type": "application/json"
+        }
+        try:
+            response = requests.post(self._siliconflow_url, json=payload, headers=headers)
+            if response.status_code == 200:
+                result = response.json()
+                return result.get("choices", [{}])[0].get("message", {}).get("content", {})
+            else:
+                return {}
+        except Exception as e:
+            logger.error(f"硅基流动辅助识别失败: {str(e)}")
+            return {}
+    
     def stop_service(self):
         """
         退出插件
         """
         pass
+
